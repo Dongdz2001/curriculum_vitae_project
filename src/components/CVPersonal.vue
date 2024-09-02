@@ -126,7 +126,7 @@ onUnmounted(() => {
       <div class="avatar-dialog-content" @click.stop>
         <div style="position: relative;">
           <img :src="avatar" alt="Avatar" class="avatar-fullscreen" 
-               :style="{ width: windowWidth > 1200 ? '100%' : '90%', 
+               :style="{ width:'100%', 
                          height: windowWidth > 1200 ? '500px' : 'auto',
                          maxHeight: '500px'
                          }">
