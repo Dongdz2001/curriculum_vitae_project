@@ -112,7 +112,7 @@ const toggleAvatarDialog = () => {
       <div class="avatar-dialog-content" @click.stop>
         <div style="position: relative;">
           <img :src="avatar" alt="Avatar" class="avatar-fullscreen" 
-               :style="{ width: typeof window !== 'undefined' && window.innerWidth > 1000 ? 'auto' : '100%', 
+               :style="{ width: typeof window !== 'undefined' && window.innerWidth > 1000 ? 'auto' : '90%', 
                          height: typeof window !== 'undefined' && window.innerWidth > 1000 ? '500px' : 'auto',
                          maxHeight: '500px'
                          }">
