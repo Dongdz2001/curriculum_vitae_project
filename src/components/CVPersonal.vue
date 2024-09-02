@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import ChatBubble from './ChatBubble.vue' // Thêm dòng này
 
-const name = ref('Dương Minh Đôngggg')
+const name = ref('Dương Minh Đông')
 const title = ref('Kỹ Sư Phần Mềm')
 const email = ref('dong20012001@gmail.com')
 const phone = ref('+84 348 807 912')
