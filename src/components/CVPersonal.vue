@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import ChatBubble from './ChatBubble.vue' // Thêm dòng này
 
-const name = ref('Dương Minh Đông')
+const name = ref('Dương Minh Đôngggg')
 const title = ref('Kỹ Sư Phần Mềm')
 const email = ref('dong20012001@gmail.com')
 const phone = ref('+84 348 807 912')
@@ -71,9 +71,9 @@ const toggleAvatarDialog = () => {
         </p>
       </header>
       <section class="contact-info">
-        <p><i class="fas fa-envelope"></i> {{ email }}</p>
-        <p><i class="fas fa-phone"></i> {{ phone }}</p>
-        <p><i class="fas fa-map-marker-alt"></i> {{ location }}</p>
+        <div class="contact-item"><i class="fas fa-envelope"></i> {{ email }}</div>
+        <div class="contact-item"><i class="fas fa-phone"></i> {{ phone }}</div>
+        <div class="contact-item"><i class="fas fa-map-marker-alt"></i> {{ location }}</div>
       </section>
       <section class="summary">
         <h2>Professional Summary</h2>
