@@ -126,8 +126,8 @@ onUnmounted(() => {
       <div class="avatar-dialog-content" @click.stop>
         <div style="position: relative;">
           <img :src="avatar" alt="Avatar" class="avatar-fullscreen" 
-               :style="{ width: windowWidth > 768 ? '100%' : '90%', 
-                         height: windowWidth > 768 ? '500px' : 'auto',
+               :style="{ width: windowWidth > 1200 ? '100%' : '90%', 
+                         height: windowWidth > 1200 ? '500px' : 'auto',
                          maxHeight: '500px'
                          }">
           <span @click="toggleAvatarDialog" style="position: absolute; top: -20px; right: -10px; font-size: 24px; color: #50409A; cursor: pointer; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">X</span>
