@@ -70,10 +70,10 @@ const toggleAvatarDialog = () => {
           <strong class="title">{{ title }}</strong>
         </p>
       </header>
-      <section class="contact-info">
-        <div class="contact-item"><i class="fas fa-envelope"></i> {{ email }}</div>
-        <div class="contact-item"><i class="fas fa-phone"></i> {{ phone }}</div>
-        <div class="contact-item"><i class="fas fa-map-marker-alt"></i> {{ location }}</div>
+      <section class="contact-info" style="display: flex; flex-wrap: wrap;">
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-envelope"></i> {{ email }}</div>
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-phone"></i> {{ phone }}</div>
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-map-marker-alt"></i> {{ location }}</div>
       </section>
       <section class="summary">
         <h2>Professional Summary</h2>
