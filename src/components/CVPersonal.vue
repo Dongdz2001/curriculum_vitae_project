@@ -119,7 +119,7 @@ onUnmounted(() => {
         </ul>
       </section>
     </div>
-    <ChatBubble :is-open="isChatOpen" @toggle="toggleChat" style="margin-bottom: 30px ;" />
+    <ChatBubble :is-open="isChatOpen" @toggle="toggleChat" style="margin-bottom: 40px ;" />
 
     <!-- Avatar Dialog -->
     <div v-if="showAvatarDialog" class="avatar-dialog" @click="toggleAvatarDialog">
