@@ -43,7 +43,7 @@ function createWebSocket() {
     return
   }
 
-  socket = new WebSocket(`wss:919b-3-84-210-56.ngrok-free.app/?userID=${senderID.value}`)
+  socket = new WebSocket(`wss:3.84.210.56:7118/?userID=${senderID.value}`)
 
   socket.onopen = () => {
     console.log('WebSocket connection established')
