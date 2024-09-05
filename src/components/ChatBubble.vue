@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { defineProps, defineEmits } from 'vue'
-import { db } from '../firebase.js'
+import { db } from './src/firebase.js'
 import { collection, addDoc, onSnapshot, doc, setDoc, query, orderBy } from 'firebase/firestore'
 
 const props = defineProps(['isOpen'])
