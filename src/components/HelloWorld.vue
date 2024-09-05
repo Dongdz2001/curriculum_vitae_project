@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { db } from 'C:/Users/dong2/OneDrive/Máy tính/CV-vue-project/curriculum_vitae_project/src/firebase.js'
+// import { db } from 'C:/Users/dong2/OneDrive/Máy tính/CV-vue-project/curriculum_vitae_project/src/firebase.js'
 import { collection, addDoc, onSnapshot, query, where, getDocs, doc, setDoc } from 'firebase/firestore'
 
 // Biến để chứa tin nhắn, userID, và danh sách tin nhắn đã nhận
