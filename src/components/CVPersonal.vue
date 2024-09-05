@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import ChatBubble from './ChatBubble.vue' // Thêm dòng này
+import { db } from '../../src/firebase.js'  
 
 const name = ref('Dương Minh Đông')
 const title = ref('Kỹ Sư Phần Mềm')
