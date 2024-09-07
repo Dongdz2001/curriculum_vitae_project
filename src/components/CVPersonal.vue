@@ -1,94 +1,132 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import ChatBubble from './ChatBubble.vue' // Thêm dòng này
-import { db } from '../../src/firebase.js'  
+import { ref, onMounted, onUnmounted } from "vue";
+import ChatBubble from "./ChatBubble.vue"; // Thêm dòng này
+import { db } from "../../src/firebase.js";
 
-const name = ref('Dương Minh Đông')
-const title = ref('Kỹ Sư Phần Mềm')
-const email = ref('dong20012001@gmail.com')
-const phone = ref('+84 348 807 912')
-const location = ref('Hanoi, Vietnam')
-const summary = ref('Passionate Software Engineer with expertise in web development and a strong foundation in computer science. Skilled in JavaScript, React, and Node.js, with a track record of delivering high-quality software solutions. Committed to continuous learning and staying updated with the latest industry trends.')
+const name = ref("Dương Minh Đông");
+const title = ref("Kỹ Sư Phần Mềm");
+const email = ref("dong20012001@gmail.com");
+const phone = ref("+84 348 807 912");
+const location = ref("Hanoi, Vietnam");
+const summary = ref(
+  "Passionate Software Engineer with expertise in web development and a strong foundation in computer science. Skilled in JavaScript, React, and Node.js, with a track record of delivering high-quality software solutions. Committed to continuous learning and staying updated with the latest industry trends."
+);
 
 const education = ref([
-  { degree: 'Bachelor of Science in Computer Science', school: 'FPT University', year: '2020 - 2024' },
-])
+  {
+    degree: "Bachelor of Science in Computer Science",
+    school: "FPT University",
+    year: "2020 - 2024",
+  },
+]);
 
 const experience = ref([
   {
-    position: 'Software Engineer',
-    company: 'FPT Software',
-    period: 'Aug 2023 - Present',
+    position: "Software Engineer",
+    company: "FPT Software",
+    period: "Aug 2023 - Present",
     responsibilities: [
-      'Developed and maintained web applications using React and Node.js',
-      'Collaborated with cross-functional teams to deliver high-quality software solutions',
-      'Implemented responsive designs and ensured cross-browser compatibility',
-      'Participated in code reviews and provided constructive feedback to team members',
+      "Developed and maintained web applications using React and Node.js",
+      "Collaborated with cross-functional teams to deliver high-quality software solutions",
+      "Implemented responsive designs and ensured cross-browser compatibility",
+      "Participated in code reviews and provided constructive feedback to team members",
     ],
   },
   {
-    position: 'Web Developer Intern',
-    company: 'Techcombank',
-    period: 'Jun 2023 - Aug 2023',
+    position: "Web Developer Intern",
+    company: "Techcombank",
+    period: "Jun 2023 - Aug 2023",
     responsibilities: [
-      'Assisted in the development of web applications using HTML, CSS, and JavaScript',
-      'Gained hands-on experience with React and Node.js',
-      'Participated in team meetings and contributed ideas for project improvements',
+      "Assisted in the development of web applications using HTML, CSS, and JavaScript",
+      "Gained hands-on experience with React and Node.js",
+      "Participated in team meetings and contributed ideas for project improvements",
     ],
   },
-])
+]);
 
-const skills = ref(['JavaScript', 'React', 'Node.js', 'HTML', 'CSS', 'Git', 'Agile/Scrum'])
+const skills = ref([
+  "JavaScript",
+  "React",
+  "Node.js",
+  "HTML",
+  "CSS",
+  "Git",
+  "Agile/Scrum",
+]);
 
-const isChatOpen = ref(false)
+const isChatOpen = ref(false);
 
 const toggleChat = () => {
-  isChatOpen.value = !isChatOpen.value
-}
+  isChatOpen.value = !isChatOpen.value;
+};
 
-const avatar = ref('https://scontent.fhan3-1.fna.fbcdn.net/v/t39.30808-6/275116749_3154779491446462_9067769380229703783_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFACCOjHcSUuiYUpwUM0tKPT4rNlWra2sdPis2Vatrax00m6Nhkc9VkdiqofQPJtw1uO-RSddIK3L5mwG3n5bI2&_nc_ohc=z5ixYXN0fEsQ7kNvgGNLPP_&_nc_ht=scontent.fhan3-1.fna&cb_e2o_trans=t&oh=00_AYAgFtnybD74kTH8uFDD2_Kp61j88Imat0BR_H98OVxyRg&oe=66DAEC39') // Thêm dòng này
+const avatar = ref(
+  "https://scontent.fhan3-1.fna.fbcdn.net/v/t39.30808-6/275116749_3154779491446462_9067769380229703783_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFACCOjHcSUuiYUpwUM0tKPT4rNlWra2sdPis2Vatrax00m6Nhkc9VkdiqofQPJtw1uO-RSddIK3L5mwG3n5bI2&_nc_ohc=z5ixYXN0fEsQ7kNvgGNLPP_&_nc_ht=scontent.fhan3-1.fna&cb_e2o_trans=t&oh=00_AYAgFtnybD74kTH8uFDD2_Kp61j88Imat0BR_H98OVxyRg&oe=66DAEC39"
+); // Thêm dòng này
 
-const pdfPath = ref('https://drive.google.com/uc?export=download&id=1n2sqr2Oq-f_T6PGW9vFoI67KnKR3g9bZ') // Thêm đường dẫn đến file PDF của bạn
+const pdfPath = ref(
+  "https://drive.google.com/uc?export=download&id=1n2sqr2Oq-f_T6PGW9vFoI67KnKR3g9bZ"
+); // Thêm đường dẫn đến file PDF của bạn
 
-const showAvatarDialog = ref(false)
+const showAvatarDialog = ref(false);
 
 const toggleAvatarDialog = () => {
-  showAvatarDialog.value = !showAvatarDialog.value
-}
+  showAvatarDialog.value = !showAvatarDialog.value;
+};
 
-const windowWidth = ref(window.innerWidth)
+const windowWidth = ref(window.innerWidth);
 
 const handleResize = () => {
-  windowWidth.value = window.innerWidth
-}
+  windowWidth.value = window.innerWidth;
+};
 
 onMounted(() => {
-  window.addEventListener('resize', handleResize)
-})
+  window.addEventListener("resize", handleResize);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-})
+  window.removeEventListener("resize", handleResize);
+});
 </script>
 
 <template>
   <div class="cv-personal">
     <div class="cv-container">
-      <a :href="pdfPath" target="_blank" rel="noopener noreferrer" class="print-button">
+      <a
+        :href="pdfPath"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="print-button"
+      >
         <i class="fas fa-print"></i>
       </a>
       <header>
-        <img :src="avatar" alt="Avatar" class="avatar" @click="toggleAvatarDialog">
+        <img
+          :src="avatar"
+          alt="Avatar"
+          class="avatar"
+          @click="toggleAvatarDialog"
+        />
         <h1>{{ name }}</h1>
         <p>
-          <strong class="position-label" style="font-weight: 600; opacity: 0.8; font-size: 0.9em;">Vị trí ứng tuyển: </strong>
+          <strong
+            class="position-label"
+            style="font-weight: 600; opacity: 0.8; font-size: 0.9em"
+            >Vị trí ứng tuyển:
+          </strong>
           <strong class="title">{{ title }}</strong>
         </p>
       </header>
-      <section class="contact-info" style="display: flex; flex-wrap: wrap;">
-        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-envelope"></i> {{ email }}</div>
-        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-phone"></i> {{ phone }}</div>
-        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px;"><i class="fas fa-map-marker-alt"></i> {{ location }}</div>
+      <section class="contact-info" style="display: flex; flex-wrap: wrap">
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
+          <i class="fas fa-envelope"></i> {{ email }}
+        </div>
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
+          <i class="fas fa-phone"></i> {{ phone }}
+        </div>
+        <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
+          <i class="fas fa-map-marker-alt"></i> {{ location }}
+        </div>
       </section>
       <section class="summary">
         <h2>Professional Summary</h2>
@@ -107,7 +145,10 @@ onUnmounted(() => {
           <h3>{{ job.position }}</h3>
           <p>{{ job.company }}, {{ job.period }}</p>
           <ul>
-            <li v-for="(responsibility, idx) in job.responsibilities" :key="idx">
+            <li
+              v-for="(responsibility, idx) in job.responsibilities"
+              :key="idx"
+            >
               {{ responsibility }}
             </li>
           </ul>
@@ -120,18 +161,44 @@ onUnmounted(() => {
         </ul>
       </section>
     </div>
-    <ChatBubble :is-open="isChatOpen" @toggle="toggleChat" style="margin-bottom: 40px ;" />
+    <ChatBubble
+      :is-open="isChatOpen"
+      @toggle="toggleChat"
+      style="margin-bottom: 50px"
+    />
 
     <!-- Avatar Dialog -->
-    <div v-if="showAvatarDialog" class="avatar-dialog" @click="toggleAvatarDialog">
+    <div
+      v-if="showAvatarDialog"
+      class="avatar-dialog"
+      @click="toggleAvatarDialog"
+    >
       <div class="avatar-dialog-content" @click.stop>
-        <div style="position: relative;">
-          <img :src="avatar" alt="Avatar" class="avatar-fullscreen" 
-               :style="{ width:'100%', 
-                         height: windowWidth > 1200 ? '500px' : 'auto',
-                         maxHeight: '500px'
-                         }">
-          <span @click="toggleAvatarDialog" style="position: absolute; top: -20px; right: -10px; font-size: 24px; color: #50409A; cursor: pointer; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">X</span>
+        <div style="position: relative">
+          <img
+            :src="avatar"
+            alt="Avatar"
+            class="avatar-fullscreen"
+            :style="{
+              width: '100%',
+              height: windowWidth > 1200 ? '500px' : 'auto',
+              maxHeight: '500px',
+            }"
+          />
+          <span
+            @click="toggleAvatarDialog"
+            style="
+              position: absolute;
+              top: -20px;
+              right: -10px;
+              font-size: 24px;
+              color: #50409a;
+              cursor: pointer;
+              text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+                1px 1px 0 #000;
+            "
+            >X</span
+          >
         </div>
       </div>
     </div>
