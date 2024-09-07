@@ -24,9 +24,9 @@ const receivedMessages = ref([]);
 let socket = null;
 
 const senderID = ref(
-  localStorage.getItem("clientId") === null
-    ? generateGUID()
-    : localStorage.getItem("clientId")
+  localStorage.getItem("clientId")
+    ? localStorage.getItem("clientId")
+    : generateGUID()
 );
 const receiverID = "serverDongCV132413244321";
 
@@ -44,6 +44,7 @@ function generateGUID() {
 
 // Initialize senderID
 onMounted(async () => {
+  ss;
   // Initialize Pusher
   const pusher = new Pusher("7953e97c7e460e39b9d4", {
     cluster: "ap1",
