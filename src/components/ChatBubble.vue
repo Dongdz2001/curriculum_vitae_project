@@ -33,12 +33,15 @@ const isInitialized = ref(false);
 
 // Function to generate a GUID
 function generateGUID() {
-  return "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0;
-    var result = r.toString(16);
-    localStorage.setItem("clientId", result);
-    return result;
-  });
+  const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(
+    /[xy]/g,
+    function (c) {
+      var r = (Math.random() * 16) | 0;
+      return r.toString(16);
+    }
+  );
+  localStorage.setItem("clientId", guid);
+  return guid;
 }
 
 // Initialize senderID
