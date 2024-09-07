@@ -8,7 +8,7 @@ const message = ref('')
 const userID = ref('') // ID người gửi (người dùng hiện tại)
 const receiverID = ref('') // ID của người nhận
 const receivedMessages = ref([])
-
+/*
 // Biến socket
 let socket = null
 
@@ -112,7 +112,7 @@ onMounted(async () => {
     }))
   })
 })
-
+*/
 </script>
 
 <template>
