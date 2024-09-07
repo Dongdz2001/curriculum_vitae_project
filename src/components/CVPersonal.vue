@@ -60,7 +60,9 @@ const toggleChat = () => {
   isChatOpen.value = !isChatOpen.value;
 };
 
-const avatar = ref("src/assets/dong.png"); // Thêm dòng này
+const avatar = ref(
+  "https://drive.google.com/uc?export=view&id=1nstbzi-u0QyRpJo9cFvtHTauYCUkZMoT"
+); // Thêm dòng này
 
 const pdfPath = ref(
   "https://drive.google.com/uc?export=download&id=1n2sqr2Oq-f_T6PGW9vFoI67KnKR3g9bZ"
