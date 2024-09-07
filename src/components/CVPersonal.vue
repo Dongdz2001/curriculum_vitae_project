@@ -60,9 +60,7 @@ const toggleChat = () => {
   isChatOpen.value = !isChatOpen.value;
 };
 
-const avatar = ref(
-  "https://scontent.fhan3-1.fna.fbcdn.net/v/t39.30808-6/275116749_3154779491446462_9067769380229703783_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFACCOjHcSUuiYUpwUM0tKPT4rNlWra2sdPis2Vatrax00m6Nhkc9VkdiqofQPJtw1uO-RSddIK3L5mwG3n5bI2&_nc_ohc=z5ixYXN0fEsQ7kNvgGNLPP_&_nc_ht=scontent.fhan3-1.fna&cb_e2o_trans=t&oh=00_AYAgFtnybD74kTH8uFDD2_Kp61j88Imat0BR_H98OVxyRg&oe=66DAEC39"
-); // Thêm dòng này
+const avatar = ref("src/image/image-Photoroom.png"); // Thêm dòng này
 
 const pdfPath = ref(
   "https://drive.google.com/uc?export=download&id=1n2sqr2Oq-f_T6PGW9vFoI67KnKR3g9bZ"
