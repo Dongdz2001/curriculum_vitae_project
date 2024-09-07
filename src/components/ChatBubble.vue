@@ -117,6 +117,8 @@ async function sendMessage() {
     timestamp: new Date(),
   });
 
+  message.value = "";
+
   // Scroll to bottom after adding the new message
   scrollToBottom();
 
@@ -140,8 +142,6 @@ async function sendMessage() {
       MessageContent: message.value,
       timestamp: new Date(),
     });
-
-    message.value = "";
   } catch (error) {
     console.error("Error sending message:", error);
   }
