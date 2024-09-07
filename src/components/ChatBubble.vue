@@ -23,42 +23,39 @@ const message = ref("");
 const receivedMessages = ref([]);
 let socket = null;
 
-const senderID = ref("");
+const senderID = ref(
+  localStorage.getItem("clientId") === null
+    ? generateGUID()
+    : localStorage.getItem("clientId")
+);
 const receiverID = "serverDongCV132413244321";
 
 const isInitialized = ref(false);
 
 // Function to generate a GUID
 function generateGUID() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
+  return "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0;
+    result = r.toString(16);
+    localStorage.setItem("clientId", result);
+    return result;
   });
 }
 
 // Initialize senderID
 onMounted(async () => {
-  let clientId = localStorage.getItem("clientId");
-  if (!clientId) {
-    clientId = generateGUID();
-    localStorage.setItem("clientId", clientId);
-  }
-  senderID.value = clientId;
-
   // Initialize Pusher
   const pusher = new Pusher("7953e97c7e460e39b9d4", {
     cluster: "ap1",
   });
-  const channel = pusher.subscribe("my-channel");
 
   // Initialize chat
-  const unsubscribe = await initializeChat();
+  await initializeChat();
 
   // Optionally, you can return a cleanup function
   return () => {
-    if (unsubscribe) unsubscribe();
     channel.unbind("chat-event");
+    pusher.unsubscribe(senderID.value);
   };
 });
 
@@ -71,7 +68,7 @@ const pusher = new Pusher("7953e97c7e460e39b9d4", {
   cluster: "ap1",
 });
 
-const channel = pusher.subscribe("my-channel");
+const channel = pusher.subscribe(senderID.value);
 
 onMounted(() => {
   channel.bind("chat-event", async (data) => {
@@ -111,21 +108,23 @@ async function sendMessage() {
     return;
   }
 
+  const currentMessage = message.value; // Store the current message before clearing it
+
   receivedMessages.value.push({
     SenderID: senderID.value,
-    MessageContent: message.value,
+    MessageContent: currentMessage,
     timestamp: new Date(),
   });
 
-  message.value = "";
+  message.value = ""; // Clear the message input
 
   // Scroll to bottom after adding the new message
   scrollToBottom();
 
   const messageObject = {
     username: senderID.value,
-    message: message.value,
-    chanelId: "my-channel",
+    message: currentMessage, // Use the stored message
+    chanelId: senderID.value,
   };
 
   try {
@@ -139,7 +138,7 @@ async function sendMessage() {
     const chatId = await getOrCreateChatId(senderID.value, receiverID);
     await addDoc(collection(db, "chats", chatId, "messages"), {
       SenderID: senderID.value,
-      MessageContent: message.value,
+      MessageContent: currentMessage, // Use the stored message
       timestamp: new Date(),
     });
   } catch (error) {
@@ -156,8 +155,6 @@ const scrollToBottom = () => {
     }
   });
 };
-
-let lastProcessedMessageTime = null;
 
 async function initializeChat() {
   if (!isInitialized.value) {
@@ -203,7 +200,12 @@ async function initializeChat() {
         </ul>
       </div>
       <div class="chat-input">
-        <input v-model="message" type="text" placeholder="Type a message..." />
+        <input
+          v-model="message"
+          type="text"
+          placeholder="Type a message..."
+          style="height: 25px; font-size: 14px"
+        />
         <button @click="sendMessage">Send</button>
       </div>
     </div>
