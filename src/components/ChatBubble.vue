@@ -7,7 +7,6 @@ import { getDocs } from "firebase/firestore";
 import {
   collection,
   addDoc,
-  onSnapshot,
   doc,
   setDoc,
   query,
@@ -44,7 +43,6 @@ function generateGUID() {
 
 // Initialize senderID
 onMounted(async () => {
-  ss;
   // Initialize Pusher
   const pusher = new Pusher("7953e97c7e460e39b9d4", {
     cluster: "ap1",
