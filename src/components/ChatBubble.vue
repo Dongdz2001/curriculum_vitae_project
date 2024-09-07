@@ -25,7 +25,7 @@ let socket = null;
 const senderID = ref(
   localStorage.getItem("clientId")
     ? localStorage.getItem("clientId")
-    : generateGUID()
+    : generateGUIDAndSaveToLocalStorage()
 );
 const receiverID = "serverDongCV132413244321";
 
@@ -33,13 +33,14 @@ const isInitialized = ref(false);
 
 // Function to generate a GUID
 function generateGUID() {
-  const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(
-    /[xy]/g,
-    function (c) {
-      var r = (Math.random() * 16) | 0;
-      return r.toString(16);
-    }
-  );
+  return "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0;
+    return r.toString(16);
+  });
+}
+
+function generateGUIDAndSaveToLocalStorage() {
+  const guid = generateGUID();
   localStorage.setItem("clientId", guid);
   return guid;
 }
