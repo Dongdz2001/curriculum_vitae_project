@@ -2,18 +2,23 @@
 import { ref, onMounted, computed, nextTick } from "vue";
 import { defineProps, defineEmits } from "vue";
 import { db } from "../../src/firebase.js";
-import { getDocs } from "firebase/firestore";
-
 import {
+  getDocs,
   collection,
   addDoc,
   doc,
   setDoc,
   query,
   orderBy,
+  onSnapshot, // Thêm onSnapshot vào đây
 } from "firebase/firestore";
-import Pusher from "pusher-js";
 import axios from "axios";
+
+// import picker component
+import EmojiPicker from "vue3-emoji-picker";
+
+// import css
+import "vue3-emoji-picker/css";
 
 const props = defineProps(["isOpen"]);
 const emit = defineEmits(["toggle"]);
@@ -21,12 +26,9 @@ const emit = defineEmits(["toggle"]);
 const message = ref("");
 const receivedMessages = ref([]);
 let socket = null;
+const flagPushMessage = ref(true);
 
-const senderID = ref(
-  localStorage.getItem("clientId")
-    ? localStorage.getItem("clientId")
-    : generateGUIDAndSaveToLocalStorage()
-);
+const senderID = ref(null);
 const receiverID = "serverDongCV132413244321";
 
 const isInitialized = ref(false);
@@ -48,18 +50,19 @@ function generateGUIDAndSaveToLocalStorage() {
 // Initialize senderID
 onMounted(async () => {
   // Initialize Pusher
-  const pusher = new Pusher("7953e97c7e460e39b9d4", {
-    cluster: "ap1",
-  });
-
-  // Initialize chat
-  await initializeChat();
-
+  // const pusher = new Pusher("7953e97c7e460e39b9d4", {
+  //   cluster: "ap1",
+  // });
+  senderID.value = localStorage.getItem("clientId");
+  if (senderID.value) {
+    // Initialize chat
+    await initializeChat();
+  }
   // Optionally, you can return a cleanup function
-  return () => {
-    channel.unbind("chat-event");
-    pusher.unsubscribe(senderID.value);
-  };
+  // return () => {
+  //   channel.unbind("chat-event");
+  //   pusher.unsubscribe(senderID.value);
+  // };
 });
 
 const toggleChat = () => {
@@ -67,51 +70,60 @@ const toggleChat = () => {
 };
 
 // Remove the WebSocket-related code and add Pusher initialization
-const pusher = new Pusher("7953e97c7e460e39b9d4", {
-  cluster: "ap1",
-});
+// const pusher = new Pusher("7953e97c7e460e39b9d4", {
+//   cluster: "ap1",
+// });
 
-const channel = pusher.subscribe(senderID.value);
+// const channel = pusher.subscribe(senderID.value);
 
-onMounted(() => {
-  channel.bind("chat-event", async (data) => {
-    if (data.username === "dong") {
-      receivedMessages.value.push({
-        SenderID: data.username,
-        MessageContent: data.message,
-        timestamp: new Date(),
-      });
+// onMounted(() => {
+//   channel.bind("chat-event", async (data) => {
+//     if (data.username === "dong") {
+//       receivedMessages.value.push({
+//         SenderID: data.username,
+//         MessageContent: data.message,
+//         timestamp: new Date(),
+//       });
 
-      // Scroll to bottom after adding the new message
-      scrollToBottom();
+//       // Scroll to bottom after adding the new message
+//       scrollToBottom();
 
-      // Add the message to Firestore
-      const chatId = await getOrCreateChatId(senderID.value, receiverID);
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        SenderID: data.username,
-        MessageContent: data.message,
-        timestamp: new Date(),
-      });
-    }
-  });
-});
+//       // Add the message to Firestore
+//       const chatId = await getOrCreateChatId(senderID.value, receiverID);
+//       await addDoc(collection(db, "chats", chatId, "messages"), {
+//         SenderID: data.username,
+//         MessageContent: data.message,
+//         timestamp: new Date(),
+//       });
+//     }
+//   });
+// });
 
 async function getOrCreateChatId(user1, user2) {
   const chatId = [user1, user2].sort().join("_");
   const chatRef = doc(db, "chats", chatId);
-  await setDoc(chatRef, { participants: [user1, user2] }, { merge: true });
+  await setDoc(
+    chatRef,
+    { participants: [user1, user2, user1] },
+    { merge: true }
+  );
   return chatId;
 }
 
 // Remove createWebSocket function
 
 async function sendMessage() {
+  if (!senderID.value && message.value) {
+    senderID.value = generateGUIDAndSaveToLocalStorage();
+    await initializeChat();
+  }
+
   if (!senderID.value || !message.value) {
     console.error("Please fill in all fields before sending the message.");
     return;
   }
 
-  const currentMessage = message.value; // Store the current message before clearing it
+  const currentMessage = message.value.trim(); // Store the current message before clearing it
 
   receivedMessages.value.push({
     SenderID: senderID.value,
@@ -120,25 +132,20 @@ async function sendMessage() {
   });
 
   message.value = ""; // Clear the message input
+  flagPushMessage.value = false;
 
   // Scroll to bottom after adding the new message
   scrollToBottom();
 
-  const messageObject = {
-    username: senderID.value,
-    message: currentMessage, // Use the stored message
-    chanelId: senderID.value,
-  };
-
   try {
-    // Send message to the endpoint using axios
-    const response = await axios.post(
-      "https://e20a-3-84-210-56.ngrok-free.app/api/messages/",
-      messageObject
-    );
+    // // Send message to the endpoint using axios
+    // const response = await axios.post(
+    //   "http://localhost:5000/api/messages/",
+    //   messageObject
+    // );
 
     // If the message is sent successfully, add it to Firestore
-    const chatId = await getOrCreateChatId(senderID.value, receiverID);
+    const chatId = senderID.value + "_" + receiverID;
     await addDoc(collection(db, "chats", chatId, "messages"), {
       SenderID: senderID.value,
       MessageContent: currentMessage, // Use the stored message
@@ -160,27 +167,72 @@ const scrollToBottom = () => {
 };
 
 async function initializeChat() {
-  if (!isInitialized.value) {
-    const chatId = await getOrCreateChatId(senderID.value, receiverID);
-    const messagesRef = collection(db, "chats", chatId, "messages");
-    const q = query(messagesRef, orderBy("timestamp", "asc"));
+  receivedMessages.value = [];
 
-    // Sử dụng getDocs để lấy dữ liệu một lần
+  // Lấy chatId dựa trên senderID và receiverID
+  const chatId = await getOrCreateChatId(senderID.value, receiverID);
+
+  // Tham chiếu đến collection messages trong Firestore
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+  try {
+    // Lấy tất cả message hiện có từ Firestore và in ra
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((doc) => {
-      const newMsg = {
+      const messageData = {
         id: doc.id,
         ...doc.data(),
       };
-
-      receivedMessages.value.push(newMsg);
+      console.log("Message: ", messageData); // In ra console
+      receivedMessages.value.push(messageData); // Thêm vào danh sách tin nhắn
     });
 
-    scrollToBottom();
-
-    isInitialized.value = true;
-    // Không cần trả về unsubscribe function vì không có subscription nào được thiết lập
+    // Sau khi lấy hết tin nhắn hiện tại, thiết lập listener theo thời gian thực
+    setRealTimeListener(messagesRef);
+  } catch (error) {
+    console.error("Error initializing chat:", error);
   }
+}
+
+function setRealTimeListener() {
+  // Lấy chatId dựa trên senderID và receiverID
+  const chatId = senderID.value + "_" + receiverID;
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+  // Lắng nghe những thay đổi theo thời gian thực trong Firestore
+  onSnapshot(q, (querySnapshot) => {
+    querySnapshot.docChanges().forEach((messageChange) => {
+      if (messageChange.type === "added") {
+        const newMsg = {
+          id: messageChange.doc.id,
+          ...messageChange.doc.data(),
+        };
+
+        console.log("New message added: ", newMsg); // In ra console message mới
+
+        if (flagPushMessage.value) {
+          receivedMessages.value.push(newMsg); // Thêm tin nhắn mới vào danh sách
+        }
+        flagPushMessage.value = true;
+
+        // Cuộn xuống cuối cùng sau khi thêm tin nhắn mới
+        scrollToBottom();
+      }
+    });
+  });
+}
+
+const showEmojiPicker = ref(false);
+
+function toggleEmojiPicker() {
+  showEmojiPicker.value = !showEmojiPicker.value;
+}
+
+function onSelectEmoji(emoji) {
+  message.value += emoji.i;
+  // showEmojiPicker.value = false;
 }
 </script>
 
@@ -208,9 +260,30 @@ async function initializeChat() {
           type="text"
           placeholder="Type a message..."
           style="height: 25px; font-size: 14px"
+          @keyup.enter.prevent="sendMessage"
+          @click="toggleEmojiPicker"
         />
+        <div
+          @click="toggleEmojiPicker"
+          class="emoji-button"
+          style="
+            width: 20px;
+            height: auto;
+            background: none;
+            text-align: center;
+            margin-left: 5px;
+          "
+        >
+          😊
+        </div>
         <button @click="sendMessage">Send</button>
       </div>
+      <EmojiPicker
+        v-if="showEmojiPicker"
+        :native="false"
+        @select="onSelectEmoji"
+        class="emoji-picker"
+      />
     </div>
   </div>
 </template>
@@ -284,6 +357,7 @@ async function initializeChat() {
 .chat-input {
   display: flex;
   padding: 10px;
+  align-items: center;
 }
 
 .chat-input input {
@@ -301,5 +375,20 @@ async function initializeChat() {
   border: none;
   border-radius: 3px;
   cursor: pointer;
+}
+
+.emoji-button {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.emoji-picker {
+  position: absolute;
+  bottom: 70px;
+  right: 10px;
+  z-index: 1001;
 }
 </style>
