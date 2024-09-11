@@ -12,13 +12,22 @@ import {
   orderBy,
   onSnapshot, // Thêm onSnapshot vào đây
 } from "firebase/firestore";
+import {
+  ref as storageRefFn,
+  getStorage,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+
 import axios from "axios";
 
 // import picker component
 import EmojiPicker from "vue3-emoji-picker";
-
 // import css
 import "vue3-emoji-picker/css";
+
+import { toast } from "vue3-toastify";
+import "vue3-toastify/dist/index.css";
 
 const props = defineProps(["isOpen"]);
 const emit = defineEmits(["toggle"]);
@@ -53,6 +62,68 @@ function generateGUIDAndSaveToLocalStorage() {
   const guid = generateGUID();
   localStorage.setItem("clientId", guid);
   return guid;
+}
+
+function isValidURL(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  console.log("File selected:", file);
+  if (!file) return;
+
+  const storage = getStorage(); // Lấy instance của storage
+  const storageRef = storageRefFn(storage, `chat_attachments/${file.name}`);
+
+  const uploadTask = uploadBytesResumable(storageRef, file);
+
+  // Kiểm tra kích thước file (ví dụ: giới hạn 5MB)
+  const maxSize = 15 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    alert("File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.");
+    return;
+  }
+
+  toast("Đang tải file...", {
+    autoClose: 1000,
+    type: "info",
+    position: "top-left",
+    theme: "auto",
+  });
+
+  uploadTask.on(
+    "state_changed",
+    (snapshot) => {
+      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      console.log("Upload is " + progress + "% done");
+    },
+    (error) => {
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      // Hiển thị thông báo lỗi cho người dùng
+      alert("Có lỗi xảy ra khi tải file. Vui lòng thử lại.");
+    },
+    async () => {
+      // console.log("Upload completed");
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      message.value = "\n" + downloadURL;
+      sendMessage();
+    }
+  );
+
+  toast("Đã tải xong file!", {
+    autoClose: 2000,
+    type: "success",
+    position: "top-left",
+    theme: "auto",
+    delay: 1000,
+  });
 }
 
 // Initialize senderID
@@ -268,6 +339,68 @@ function onSelectEmoji(emoji) {
   message.value += emoji.i;
   // showEmojiPicker.value = false;
 }
+
+function openLink(link) {
+  // Tạo phần tử anchor tạm thời
+  const a = document.createElement("a");
+  a.href = link;
+
+  // Kiểm tra nếu liên kết thuộc Firebase Storage
+  const isFirebaseStorage = link.startsWith(
+    "https://firebasestorage.googleapis.com/"
+  );
+
+  // Lấy phần mở rộng của file từ URL
+  const fileExtension = link.split(".").pop().toLowerCase();
+
+  // Các loại file cần tải xuống
+  const downloadableExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "bmp", // Hình ảnh
+    "pdf", // PDF
+    "txt",
+    "json", // Tệp văn bản và JSON
+    "xls",
+    "xlsx", // Excel
+    "ppt",
+    "pptx", // PowerPoint
+    "doc",
+    "docx", // Word
+  ];
+
+  // Nếu link thuộc Firebase Storage và có phần mở rộng phù hợp, cho phép tải xuống
+  if (isFirebaseStorage && downloadableExtensions.includes(fileExtension)) {
+    a.download = ""; // Sử dụng tên gốc của file để tải xuống
+  }
+
+  // Thêm vào DOM để thực hiện hành động
+  document.body.appendChild(a);
+
+  try {
+    // Thử tải xuống
+    a.click();
+
+    // Xóa phần tử tạm thời sau khi click
+    document.body.removeChild(a);
+
+    // Đặt thời gian chờ để kiểm tra xem việc tải xuống có bắt đầu hay không
+    setTimeout(() => {
+      // Nếu không thành công, mở link trong tab mới
+      if (!a.download) {
+        throw new Error(
+          "Tải xuống không thành công, mở liên kết trong tab mới"
+        );
+      }
+    }, 1000); // Chờ 1 giây trước khi kiểm tra
+  } catch (error) {
+    console.error(error.message);
+    // Nếu có lỗi, mở link trong tab mới
+    window.open(link, "_blank");
+  }
+}
 </script>
 
 <template>
@@ -310,7 +443,21 @@ function onSelectEmoji(emoji) {
         <ul>
           <li v-for="msg in receivedMessages" :key="msg.id">
             {{ msg.SenderID === senderID ? "You" : "Đông" }}:
-            {{ msg.MessageContent }}
+
+            <!-- Kiểm tra nếu tin nhắn là URL -->
+            <span v-if="isValidURL(msg.MessageContent)">
+              <div
+                @click="openLink(msg.MessageContent)"
+                style="cursor: pointer; color: blue"
+              >
+                {{ msg.MessageContent }}
+              </div>
+            </span>
+
+            <!-- Nếu không phải URL, hiển thị tin nhắn thông thường -->
+            <span v-else>
+              {{ msg.MessageContent }}
+            </span>
           </li>
         </ul>
       </div>
@@ -323,6 +470,20 @@ function onSelectEmoji(emoji) {
           @keyup.enter.prevent="sendMessage"
           @click="toggleEmojiPickeOff"
         />
+        <label
+          for="file-upload"
+          class="file-upload-label"
+          style="margin-left: 5px"
+        >
+          <input
+            id="file-upload"
+            type="file"
+            @change="handleFileUpload"
+            style="display: none"
+          />
+          <i class="fas fa-paperclip"></i>
+          <!-- Icon for file upload -->
+        </label>
         <div
           @click="toggleEmojiPicker"
           class="emoji-button"
