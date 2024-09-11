@@ -30,8 +30,16 @@ const flagPushMessage = ref(true);
 
 const senderID = ref(null);
 const receiverID = "serverDongCV132413244321";
-
+const userNameClient = ref("");
 const isInitialized = ref(false);
+
+function setUserNameClient() {
+  if (userNameClient.value) {
+    // Show dialog with the username
+    getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
+    alert(`Đặt tên của bạn thành công!`);
+  }
+}
 
 // Function to generate a GUID
 function generateGUID() {
@@ -99,12 +107,12 @@ const toggleChat = () => {
 //   });
 // });
 
-async function getOrCreateChatId(user1, user2) {
+async function getOrCreateChatId(user1, user2, user3 = null) {
   const chatId = [user1, user2].sort().join("_");
   const chatRef = doc(db, "chats", chatId);
   await setDoc(
     chatRef,
-    { participants: [user1, user2, user1] },
+    { participants: [user1, user2, user3 ? user3 : user1] },
     { merge: true }
   );
   return chatId;
@@ -115,6 +123,7 @@ async function getOrCreateChatId(user1, user2) {
 async function sendMessage() {
   if (!senderID.value && message.value) {
     senderID.value = generateGUIDAndSaveToLocalStorage();
+    await getOrCreateChatId(senderID.value, receiverID);
     await initializeChat();
   }
 
@@ -166,12 +175,35 @@ const scrollToBottom = () => {
   });
 };
 
+async function setClientUserNameInitialize() {
+  const userRef = collection(db, "chats");
+  try {
+    const userDocs = await getDocs(userRef);
+    const userNames = userDocs.docs.map((doc) => doc.data()); // Filter by senderId
+    const userSelectFilter = userNames.find((x) =>
+      x.participants.includes(senderID.value)
+    );
+
+    console.log("userSelectFilter: ", userSelectFilter.participants[2]);
+
+    if (
+      userSelectFilter &&
+      userSelectFilter.participants.length > 2 &&
+      userSelectFilter.participants[2] !== senderID.value
+    ) {
+      userNameClient.value = userSelectFilter.participants[2];
+    }
+  } catch (error) {
+    console.error("Error fetching user names:", error);
+  }
+}
+
 async function initializeChat() {
   receivedMessages.value = [];
 
   // Lấy chatId dựa trên senderID và receiverID
-  const chatId = await getOrCreateChatId(senderID.value, receiverID);
-
+  const chatId = senderID.value + "_" + receiverID;
+  await setClientUserNameInitialize(chatId);
   // Tham chiếu đến collection messages trong Firestore
   const messagesRef = collection(db, "chats", chatId, "messages");
   const q = query(messagesRef, orderBy("timestamp", "asc"));
@@ -189,7 +221,7 @@ async function initializeChat() {
     });
 
     // Sau khi lấy hết tin nhắn hiện tại, thiết lập listener theo thời gian thực
-    setRealTimeListener(messagesRef);
+    setRealTimeListener();
   } catch (error) {
     console.error("Error initializing chat:", error);
   }
@@ -210,8 +242,6 @@ function setRealTimeListener() {
           ...messageChange.doc.data(),
         };
 
-        console.log("New message added: ", newMsg); // In ra console message mới
-
         if (flagPushMessage.value) {
           receivedMessages.value.push(newMsg); // Thêm tin nhắn mới vào danh sách
         }
@@ -230,6 +260,10 @@ function toggleEmojiPicker() {
   showEmojiPicker.value = !showEmojiPicker.value;
 }
 
+function toggleEmojiPickeOff() {
+  showEmojiPicker.value = false;
+}
+
 function onSelectEmoji(emoji) {
   message.value += emoji.i;
   // showEmojiPicker.value = false;
@@ -242,8 +276,34 @@ function onSelectEmoji(emoji) {
       <i class="fas fa-comments"></i>
     </button>
     <div v-if="isOpen" class="chat-window">
-      <div class="chat-header" style="height: 35px">
-        <h3>Chat</h3>
+      <div class="chat-header" style="height: 55px">
+        <div style="display: flex; flex-direction: column">
+          <div style="font-size: 14px; font-weight: bold">Chat</div>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <button class="btn-set-name" @click="setUserNameClient">Set</button>
+            <input
+              v-model="userNameClient"
+              type="text"
+              placeholder="Nhập tên của bạn"
+              style="
+                height: 25px; /*
+            Increased height for better touch target */
+                font-size: 14px; /*
+            Increased font size for better readability */
+                padding: 0 10px; /*
+            Added padding for better spacing */
+                border: 1px solid #ccc; /* Added
+            border for better visibility */
+                border-radius: 5px; /* Added border
+            radius for a smoother look */
+                outline: none; /* Removed outline for
+            a cleaner look */
+                transition: border-color 0.3s; /* Added transition
+            for focus effect */
+              "
+            />
+          </div>
+        </div>
         <button @click="toggleChat" class="close-button">&times;</button>
       </div>
       <div class="chat-messages" ref="chatMessagesRef">
@@ -261,7 +321,7 @@ function onSelectEmoji(emoji) {
           placeholder="Type a message..."
           style="height: 25px; font-size: 14px"
           @keyup.enter.prevent="sendMessage"
-          @click="toggleEmojiPicker"
+          @click="toggleEmojiPickeOff"
         />
         <div
           @click="toggleEmojiPicker"
@@ -390,5 +450,26 @@ function onSelectEmoji(emoji) {
   bottom: 70px;
   right: 10px;
   z-index: 1001;
+}
+
+.btn-set-name {
+  background-color: #00bcd4;
+  border-radius: 5px;
+  border: none;
+  height: 25px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-set-name:hover {
+  background-color: rgb(23, 99, 240);
+  color: white; /* Adding this to ensure text is visible on yellow background */
+}
+.btn-set-name:active {
+  background-color: rgb(3, 72, 199); /* Darker yellow */
+  transform: scale(0.95); /* Slight scale down effect */
 }
 </style>
