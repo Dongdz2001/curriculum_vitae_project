@@ -532,7 +532,7 @@ function openLink(link) {
   position: absolute;
   bottom: 70px;
   right: 0;
-  width: 300px;
+  width: 320px;
   height: 400px;
   background-color: white;
   border: 1px solid #ccc;
