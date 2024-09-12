@@ -42,6 +42,11 @@ const receiverID = "serverDongCV132413244321";
 const userNameClient = ref("");
 const isInitialized = ref(false);
 
+const pathPDF = ref("imagePDF.png");
+const pathExcel = ref("imageExcel.png");
+const pathText = ref("imageText.png");
+const pathHTML = ref("imageHTML.png");
+
 function setUserNameClient() {
   if (userNameClient.value) {
     // Show dialog with the username
@@ -112,7 +117,7 @@ async function handleFileUpload(event) {
     async () => {
       // console.log("Upload completed");
       const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      message.value = "\n" + downloadURL;
+      message.value = "  " + downloadURL;
       sendMessage();
     }
   );
@@ -381,7 +386,7 @@ function openLink(link) {
 
   // Thử tải xuống hoặc mở link
   try {
-    a.click();
+    window.open(link, "_blank");
   } catch (error) {
     console.error("Lỗi xảy ra khi tải xuống, mở trong tab mới:", error);
     // Nếu có lỗi, mở link trong tab mới
@@ -399,6 +404,69 @@ const isImageFile = (filename) => {
   // Tách phần mở rộng từ URL
   const ext = filename.split("?")[0].split(".").pop()?.toLowerCase();
   return ext && imageExtensions.includes(ext);
+};
+
+const isPDF = (link) => {
+  if (!link || typeof link !== "string") return null;
+
+  const regex = /.*\/o\/.*?%2F(.*?)\?/;
+  const match = link.match(regex);
+
+  // Kiểm tra nếu có tên file và phần mở rộng là 'pdf'
+  if (match) {
+    let filename = decodeURIComponent(match[1]); // Giải mã tên file
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (ext === "pdf") {
+      return filename; // Trả về tên file nếu là PDF
+    }
+  }
+  return null; // Trả về null nếu không phải PDF
+};
+
+const isExcel = (link) => {
+  if (!link || typeof link !== "string") return null;
+
+  const regex = /.*\/o\/.*?%2F(.*?)\?/;
+  const match = link.match(regex);
+  if (match) {
+    let filename = decodeURIComponent(match[1]);
+    const ext = filename.split(".").pop()?.toLowerCase();
+    // Check for both .xls and .xlsx extensions
+    if (ext === "xls" || ext === "xlsx") {
+      return filename;
+    }
+  }
+  return null;
+};
+
+const isText = (link) => {
+  if (!link || typeof link !== "string") return null;
+
+  const regex = /.*\/o\/.*?%2F(.*?)\?/;
+  const match = link.match(regex);
+  if (match) {
+    let filename = decodeURIComponent(match[1]);
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (ext === "txt") {
+      return filename;
+    }
+  }
+  return null;
+};
+
+const isHTML = (link) => {
+  if (!link || typeof link !== "string") return null;
+
+  const regex = /.*\/o\/.*?%2F(.*?)\?/;
+  const match = link.match(regex);
+  if (match) {
+    let filename = decodeURIComponent(match[1]);
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (ext === "html") {
+      return filename;
+    }
+  }
+  return null;
 };
 
 function openImage(link) {
@@ -444,9 +512,22 @@ function openImage(link) {
       </div>
       <div class="chat-messages" ref="chatMessagesRef">
         <ul>
-          <li v-for="msg in receivedMessages" :key="msg.id">
-            {{ msg.SenderID === senderID ? "You" : "Đông" }}:
-
+          <div style="width: auto"></div>
+          <li
+            v-for="msg in receivedMessages"
+            :key="msg.id"
+            :style="{
+              background: msg.SenderID === senderID ? 'blue' : 'white',
+              color: msg.SenderID === senderID ? 'white' : 'black',
+              padding: '5px 15px',
+              borderRadius: '30px',
+              margin: '5px 0',
+              marginLeft: msg.SenderID !== senderID ? '0' : 'auto',
+              textAlign: 'justify',
+              width: 'fit-content', // Set li to fit width
+              maxWidth: '70%',
+            }"
+          >
             <!-- Kiểm tra nếu tin nhắn là URL ảnh -->
             <span v-if="isImageFile(msg.MessageContent)">
               <img
@@ -457,13 +538,91 @@ function openImage(link) {
               />
             </span>
 
+            <!-- Kiểm tra nếu tin nhắn là file PDF -->
+            <span v-else-if="isPDF(msg.MessageContent)">
+              <div
+                @click="openLink(msg.MessageContent)"
+                style="
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  width: auto;
+                "
+              >
+                <!-- Hiển thị biểu tượng file PDF -->
+                <img
+                  :src="pathPDF"
+                  alt="PDF"
+                  style="width: 20px; margin-right: 5px"
+                />
+                <!-- Hiển thị tên file PDF -->
+                <div style="width: auto">
+                  {{ isPDF(msg.MessageContent) }}
+                </div>
+              </div>
+            </span>
+
+            <!-- Kiểm tra nếu tin nhắn là file Excel -->
+            <span v-else-if="isExcel(msg.MessageContent)">
+              <div
+                @click="openLink(msg.MessageContent)"
+                style="cursor: pointer; display: flex; align-items: center"
+              >
+                <!-- Hiển thị biểu tượng file Excel -->
+                <img
+                  :src="pathExcel"
+                  alt="Excel"
+                  style="width: 20px; margin-right: 5px"
+                />
+                <!-- Hiển thị tên file PDF -->
+                {{ isExcel(msg.MessageContent) }}
+              </div>
+            </span>
+
+            <!-- Kiểm tra nếu tin nhắn là file Text -->
+            <span v-else-if="isText(msg.MessageContent)">
+              <div
+                @click="openLink(msg.MessageContent)"
+                style="cursor: pointer; display: flex; align-items: center"
+              >
+                <!-- Hiển thị biểu tượng file Text -->
+                <img
+                  :src="pathText"
+                  alt="Text"
+                  style="width: 20px; margin-right: 5px"
+                />
+                <!-- Hiển thị tên file PDF -->
+                {{ isText(msg.MessageContent) }}
+              </div>
+            </span>
+
+            <!-- Kiểm tra nếu tin nhắn là file HTML -->
+            <span v-else-if="isHTML(msg.MessageContent)">
+              <div
+                @click="openLink(msg.MessageContent)"
+                style="cursor: pointer; display: flex; align-items: center"
+              >
+                <!-- Hiển thị biểu tượng file HTML -->
+                <img
+                  :src="pathHTML"
+                  alt="HTML"
+                  style="width: 20px; margin-right: 5px"
+                />
+                <!-- Hiển thị tên file HTML -->
+                {{ isHTML(msg.MessageContent) }}
+              </div>
+            </span>
+
             <!-- Kiểm tra nếu tin nhắn là URL thông thường -->
             <span v-else-if="isValidURL(msg.MessageContent)">
               <div
                 @click="openLink(msg.MessageContent)"
-                style="cursor: pointer; color: blue"
+                :style="{
+                  cursor: 'pointer',
+                  color: msg.SenderID === senderID ? 'white' : 'blue',
+                }"
               >
-                {{ msg.MessageContent }}
+                <div>{{ msg.MessageContent }}</div>
               </div>
             </span>
 
@@ -576,6 +735,8 @@ function openImage(link) {
   flex-grow: 1;
   padding: 10px;
   overflow-y: auto;
+  background-color: lightgray;
+  width: 320px;
 }
 
 .chat-messages ul {
