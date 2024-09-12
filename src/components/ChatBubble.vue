@@ -520,7 +520,7 @@ function openImage(link) {
               background: msg.SenderID === senderID ? 'blue' : 'white',
               color: msg.SenderID === senderID ? 'white' : 'black',
               padding: '5px 15px',
-              borderRadius: '30px',
+              borderRadius: '15px',
               margin: '5px 0',
               marginLeft: msg.SenderID !== senderID ? '0' : 'auto',
               textAlign: 'justify',
@@ -533,7 +533,7 @@ function openImage(link) {
               <img
                 :src="msg.MessageContent"
                 alt="image"
-                style="max-width: 200px; cursor: pointer"
+                style="max-width: 200px; cursor: pointer; border-radius: 10px"
                 @click="openImage(msg.MessageContent)"
               />
             </span>
