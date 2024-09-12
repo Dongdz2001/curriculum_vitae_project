@@ -373,33 +373,36 @@ function openLink(link) {
 
   // Nếu link thuộc Firebase Storage và có phần mở rộng phù hợp, cho phép tải xuống
   if (isFirebaseStorage && downloadableExtensions.includes(fileExtension)) {
-    a.download = ""; // Sử dụng tên gốc của file để tải xuống
+    a.download = ""; // Cho phép tải xuống file
   }
 
   // Thêm vào DOM để thực hiện hành động
   document.body.appendChild(a);
 
+  // Thử tải xuống hoặc mở link
   try {
-    // Thử tải xuống
     a.click();
-
-    // Xóa phần tử tạm thời sau khi click
-    document.body.removeChild(a);
-
-    // Đặt thời gian chờ để kiểm tra xem việc tải xuống có bắt đầu hay không
-    setTimeout(() => {
-      // Nếu không thành công, mở link trong tab mới
-      if (!a.download) {
-        throw new Error(
-          "Tải xuống không thành công, mở liên kết trong tab mới"
-        );
-      }
-    }, 1000); // Chờ 1 giây trước khi kiểm tra
   } catch (error) {
-    console.error(error.message);
+    console.error("Lỗi xảy ra khi tải xuống, mở trong tab mới:", error);
     // Nếu có lỗi, mở link trong tab mới
     window.open(link, "_blank");
+  } finally {
+    // Xóa phần tử tạm thời khỏi DOM
+    document.body.removeChild(a);
   }
+}
+
+const isImageFile = (filename) => {
+  if (!filename || typeof filename !== "string") return false;
+
+  const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"];
+  // Tách phần mở rộng từ URL
+  const ext = filename.split("?")[0].split(".").pop()?.toLowerCase();
+  return ext && imageExtensions.includes(ext);
+};
+
+function openImage(link) {
+  window.open(link, "_blank");
 }
 </script>
 
@@ -444,8 +447,18 @@ function openLink(link) {
           <li v-for="msg in receivedMessages" :key="msg.id">
             {{ msg.SenderID === senderID ? "You" : "Đông" }}:
 
-            <!-- Kiểm tra nếu tin nhắn là URL -->
-            <span v-if="isValidURL(msg.MessageContent)">
+            <!-- Kiểm tra nếu tin nhắn là URL ảnh -->
+            <span v-if="isImageFile(msg.MessageContent)">
+              <img
+                :src="msg.MessageContent"
+                alt="image"
+                style="max-width: 200px; cursor: pointer"
+                @click="openImage(msg.MessageContent)"
+              />
+            </span>
+
+            <!-- Kiểm tra nếu tin nhắn là URL thông thường -->
+            <span v-else-if="isValidURL(msg.MessageContent)">
               <div
                 @click="openLink(msg.MessageContent)"
                 style="cursor: pointer; color: blue"
