@@ -18,14 +18,10 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
-
-import axios from "axios";
-
 // import picker component
 import EmojiPicker from "vue3-emoji-picker";
 // import css
 import "vue3-emoji-picker/css";
-
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
@@ -34,7 +30,6 @@ const emit = defineEmits(["toggle"]);
 
 const message = ref("");
 const receivedMessages = ref([]);
-let socket = null;
 const flagPushMessage = ref(true);
 
 const senderID = ref(null);
@@ -47,13 +42,134 @@ const pathExcel = ref("imageExcel.png");
 const pathText = ref("imageText.png");
 const pathHTML = ref("imageHTML.png");
 
-function setUserNameClient() {
-  if (userNameClient.value) {
-    // Show dialog with the username
-    getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
-    alert(`Đặt tên của bạn thành công!`);
+const chatMessagesRef = ref(null);
+const showEmojiPicker = ref(false);
+
+// ---------------------------------------------------------
+async function initializeChat() {
+  // Lấy chatId dựa trên senderID và receiverID
+  const chatId = senderID.value + "_" + receiverID;
+  await setClientUserNameInitialize(chatId);
+  // Tham chiếu đến collection messages trong Firestore
+  // const messagesRef = collection(db, "chats", chatId, "messages");
+  // const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+  try {
+    receivedMessages.value = [];
+
+    // Sau khi lấy hết tin nhắn hiện tại, thiết lập listener theo thời gian thực
+    setRealTimeListener();
+  } catch (error) {
+    console.error("Error initializing chat:", error);
   }
 }
+
+async function sendMessage() {
+  if (!senderID.value && message.value) {
+    senderID.value = generateGUIDAndSaveToLocalStorage();
+    await getOrCreateChatId(senderID.value, receiverID);
+    await initializeChat();
+  }
+
+  if (!senderID.value || !message.value) {
+    console.error("Please fill in all fields before sending the message.");
+    return;
+  }
+
+  const currentMessage = message.value.trim(); // Store the current message before clearing it
+
+  receivedMessages.value.push({
+    SenderID: senderID.value,
+    MessageContent: currentMessage,
+    timestamp: new Date(),
+  });
+
+  message.value = ""; // Clear the message input
+  flagPushMessage.value = false;
+
+  // Scroll to bottom after adding the new message
+  scrollToBottom();
+
+  try {
+    // If the message is sent successfully, add it to Firestore
+    const chatId = senderID.value + "_" + receiverID;
+    await setUserNameClient(false);
+
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      SenderID: senderID.value,
+      MessageContent: currentMessage, // Use the stored message
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    console.error("Error sending message:", error);
+  }
+}
+// ---------------------------------------------------------
+async function setUserNameClient(flagAlert = true) {
+  if (!senderID.value) {
+    senderID.value = generateGUIDAndSaveToLocalStorage();
+    await getOrCreateChatId(senderID.value, receiverID);
+  }
+
+  if (userNameClient.value) {
+    // Show dialog with the username
+
+    await getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
+    if (flagAlert) {
+      alert(`Đặt tên của bạn thành công!`);
+    }
+  }
+}
+async function setClientUserNameInitialize() {
+  const userRef = collection(db, "chats");
+  try {
+    const userDocs = await getDocs(userRef);
+    const userNames = userDocs.docs.map((doc) => doc.data()); // Filter by senderId
+    const userSelectFilter = userNames.find((x) =>
+      x.participants.includes(senderID.value)
+    );
+
+    console.log("userSelectFilter: ", userSelectFilter.participants[2]);
+
+    if (
+      userSelectFilter &&
+      userSelectFilter.participants.length > 2 &&
+      userSelectFilter.participants[2] !== senderID.value
+    ) {
+      userNameClient.value = userSelectFilter.participants[2];
+    }
+  } catch (error) {
+    console.error("Error fetching user names:", error);
+  }
+}
+function setRealTimeListener() {
+  // Lấy chatId dựa trên senderID và receiverID
+  const chatId = senderID.value + "_" + receiverID;
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+  // Lắng nghe những thay đổi theo thời gian thực trong Firestore
+  onSnapshot(q, (querySnapshot) => {
+    querySnapshot.docChanges().forEach((messageChange) => {
+      if (messageChange.type === "added") {
+        const newMsg = {
+          id: messageChange.doc.id,
+          ...messageChange.doc.data(),
+        };
+
+        if (flagPushMessage.value) {
+          receivedMessages.value.push(newMsg); // Thêm tin nhắn mới vào danh sách
+        }
+        flagPushMessage.value = true;
+
+        // Cuộn xuống cuối cùng sau khi thêm tin nhắn mới
+        scrollToBottom();
+      }
+    });
+  });
+}
+
+// ---------------------------------------------------------
 
 // Function to generate a GUID
 function generateGUID() {
@@ -62,22 +178,11 @@ function generateGUID() {
     return r.toString(16);
   });
 }
-
 function generateGUIDAndSaveToLocalStorage() {
   const guid = generateGUID();
   localStorage.setItem("clientId", guid);
   return guid;
 }
-
-function isValidURL(string) {
-  try {
-    new URL(string);
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
-
 async function handleFileUpload(event) {
   const file = event.target.files[0];
   console.log("File selected:", file);
@@ -130,118 +235,28 @@ async function handleFileUpload(event) {
     delay: 1000,
   });
 }
-
 // Initialize senderID
 onMounted(async () => {
-  // Initialize Pusher
-  // const pusher = new Pusher("7953e97c7e460e39b9d4", {
-  //   cluster: "ap1",
-  // });
   senderID.value = localStorage.getItem("clientId");
   if (senderID.value) {
-    // Initialize chat
     await initializeChat();
   }
-  // Optionally, you can return a cleanup function
-  // return () => {
-  //   channel.unbind("chat-event");
-  //   pusher.unsubscribe(senderID.value);
-  // };
 });
 
 const toggleChat = () => {
   emit("toggle");
 };
 
-// Remove the WebSocket-related code and add Pusher initialization
-// const pusher = new Pusher("7953e97c7e460e39b9d4", {
-//   cluster: "ap1",
-// });
-
-// const channel = pusher.subscribe(senderID.value);
-
-// onMounted(() => {
-//   channel.bind("chat-event", async (data) => {
-//     if (data.username === "dong") {
-//       receivedMessages.value.push({
-//         SenderID: data.username,
-//         MessageContent: data.message,
-//         timestamp: new Date(),
-//       });
-
-//       // Scroll to bottom after adding the new message
-//       scrollToBottom();
-
-//       // Add the message to Firestore
-//       const chatId = await getOrCreateChatId(senderID.value, receiverID);
-//       await addDoc(collection(db, "chats", chatId, "messages"), {
-//         SenderID: data.username,
-//         MessageContent: data.message,
-//         timestamp: new Date(),
-//       });
-//     }
-//   });
-// });
-
 async function getOrCreateChatId(user1, user2, user3 = null) {
   const chatId = [user1, user2].sort().join("_");
   const chatRef = doc(db, "chats", chatId);
   await setDoc(
     chatRef,
-    { participants: [user1, user2, user3 ? user3 : user1] },
+    { participants: [user1, user2, user3 ? user3 : user1, new Date(), false] },
     { merge: true }
   );
   return chatId;
 }
-
-// Remove createWebSocket function
-
-async function sendMessage() {
-  if (!senderID.value && message.value) {
-    senderID.value = generateGUIDAndSaveToLocalStorage();
-    await getOrCreateChatId(senderID.value, receiverID);
-    await initializeChat();
-  }
-
-  if (!senderID.value || !message.value) {
-    console.error("Please fill in all fields before sending the message.");
-    return;
-  }
-
-  const currentMessage = message.value.trim(); // Store the current message before clearing it
-
-  receivedMessages.value.push({
-    SenderID: senderID.value,
-    MessageContent: currentMessage,
-    timestamp: new Date(),
-  });
-
-  message.value = ""; // Clear the message input
-  flagPushMessage.value = false;
-
-  // Scroll to bottom after adding the new message
-  scrollToBottom();
-
-  try {
-    // // Send message to the endpoint using axios
-    // const response = await axios.post(
-    //   "http://localhost:5000/api/messages/",
-    //   messageObject
-    // );
-
-    // If the message is sent successfully, add it to Firestore
-    const chatId = senderID.value + "_" + receiverID;
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-      SenderID: senderID.value,
-      MessageContent: currentMessage, // Use the stored message
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    console.error("Error sending message:", error);
-  }
-}
-
-const chatMessagesRef = ref(null);
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -250,87 +265,6 @@ const scrollToBottom = () => {
     }
   });
 };
-
-async function setClientUserNameInitialize() {
-  const userRef = collection(db, "chats");
-  try {
-    const userDocs = await getDocs(userRef);
-    const userNames = userDocs.docs.map((doc) => doc.data()); // Filter by senderId
-    const userSelectFilter = userNames.find((x) =>
-      x.participants.includes(senderID.value)
-    );
-
-    console.log("userSelectFilter: ", userSelectFilter.participants[2]);
-
-    if (
-      userSelectFilter &&
-      userSelectFilter.participants.length > 2 &&
-      userSelectFilter.participants[2] !== senderID.value
-    ) {
-      userNameClient.value = userSelectFilter.participants[2];
-    }
-  } catch (error) {
-    console.error("Error fetching user names:", error);
-  }
-}
-
-async function initializeChat() {
-  receivedMessages.value = [];
-
-  // Lấy chatId dựa trên senderID và receiverID
-  const chatId = senderID.value + "_" + receiverID;
-  await setClientUserNameInitialize(chatId);
-  // Tham chiếu đến collection messages trong Firestore
-  const messagesRef = collection(db, "chats", chatId, "messages");
-  const q = query(messagesRef, orderBy("timestamp", "asc"));
-
-  try {
-    // Lấy tất cả message hiện có từ Firestore và in ra
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      const messageData = {
-        id: doc.id,
-        ...doc.data(),
-      };
-      console.log("Message: ", messageData); // In ra console
-      receivedMessages.value.push(messageData); // Thêm vào danh sách tin nhắn
-    });
-
-    // Sau khi lấy hết tin nhắn hiện tại, thiết lập listener theo thời gian thực
-    setRealTimeListener();
-  } catch (error) {
-    console.error("Error initializing chat:", error);
-  }
-}
-
-function setRealTimeListener() {
-  // Lấy chatId dựa trên senderID và receiverID
-  const chatId = senderID.value + "_" + receiverID;
-  const messagesRef = collection(db, "chats", chatId, "messages");
-  const q = query(messagesRef, orderBy("timestamp", "asc"));
-
-  // Lắng nghe những thay đổi theo thời gian thực trong Firestore
-  onSnapshot(q, (querySnapshot) => {
-    querySnapshot.docChanges().forEach((messageChange) => {
-      if (messageChange.type === "added") {
-        const newMsg = {
-          id: messageChange.doc.id,
-          ...messageChange.doc.data(),
-        };
-
-        if (flagPushMessage.value) {
-          receivedMessages.value.push(newMsg); // Thêm tin nhắn mới vào danh sách
-        }
-        flagPushMessage.value = true;
-
-        // Cuộn xuống cuối cùng sau khi thêm tin nhắn mới
-        scrollToBottom();
-      }
-    });
-  });
-}
-
-const showEmojiPicker = ref(false);
 
 function toggleEmojiPicker() {
   showEmojiPicker.value = !showEmojiPicker.value;
@@ -345,55 +279,13 @@ function onSelectEmoji(emoji) {
   // showEmojiPicker.value = false;
 }
 
-function openLink(link) {
-  // Tạo phần tử anchor tạm thời
-  const a = document.createElement("a");
-  a.href = link;
-
-  // Kiểm tra nếu liên kết thuộc Firebase Storage
-  const isFirebaseStorage = link.startsWith(
-    "https://firebasestorage.googleapis.com/"
-  );
-
-  // Lấy phần mở rộng của file từ URL
-  const fileExtension = link.split(".").pop().toLowerCase();
-
-  // Các loại file cần tải xuống
-  const downloadableExtensions = [
-    "jpg",
-    "jpeg",
-    "png",
-    "gif",
-    "bmp", // Hình ảnh
-    "pdf", // PDF
-    "txt",
-    "json", // Tệp văn bản và JSON
-    "xls",
-    "xlsx", // Excel
-    "ppt",
-    "pptx", // PowerPoint
-    "doc",
-    "docx", // Word
-  ];
-
-  // Nếu link thuộc Firebase Storage và có phần mở rộng phù hợp, cho phép tải xuống
-  if (isFirebaseStorage && downloadableExtensions.includes(fileExtension)) {
-    a.download = ""; // Cho phép tải xuống file
-  }
-
-  // Thêm vào DOM để thực hiện hành động
-  document.body.appendChild(a);
-
-  // Thử tải xuống hoặc mở link
+// ---------------------------------------------------------
+function isValidURL(string) {
   try {
-    window.open(link, "_blank");
-  } catch (error) {
-    console.error("Lỗi xảy ra khi tải xuống, mở trong tab mới:", error);
-    // Nếu có lỗi, mở link trong tab mới
-    window.open(link, "_blank");
-  } finally {
-    // Xóa phần tử tạm thời khỏi DOM
-    document.body.removeChild(a);
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
 
@@ -469,6 +361,60 @@ const isHTML = (link) => {
   return null;
 };
 
+// ---------------------------------------------------------
+
+function openLink(link) {
+  // Tạo phần tử anchor tạm thời
+  const a = document.createElement("a");
+  a.href = link;
+
+  // Kiểm tra nếu liên kết thuộc Firebase Storage
+  const isFirebaseStorage = link.startsWith(
+    "https://firebasestorage.googleapis.com/"
+  );
+
+  // Lấy phần mở rộng của file từ URL
+  const fileExtension = link.split(".").pop().toLowerCase();
+
+  // Các loại file cần tải xuống
+  const downloadableExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "bmp", // Hình ảnh
+    "pdf", // PDF
+    "txt",
+    "json", // Tệp văn bản và JSON
+    "xls",
+    "xlsx", // Excel
+    "ppt",
+    "pptx", // PowerPoint
+    "doc",
+    "docx", // Word
+  ];
+
+  // Nếu link thuộc Firebase Storage và có phần mở rộng phù hợp, cho phép tải xuống
+  if (isFirebaseStorage && downloadableExtensions.includes(fileExtension)) {
+    a.download = ""; // Cho phép tải xuống file
+  }
+
+  // Thêm vào DOM để thực hiện hành động
+  document.body.appendChild(a);
+
+  // Thử tải xuống hoặc mở link
+  try {
+    window.open(link, "_blank");
+  } catch (error) {
+    console.error("Lỗi xảy ra khi tải xuống, mở trong tab mới:", error);
+    // Nếu có lỗi, mở link trong tab mới
+    window.open(link, "_blank");
+  } finally {
+    // Xóa phần tử tạm thời khỏi DOM
+    document.body.removeChild(a);
+  }
+}
+
 function openImage(link) {
   window.open(link, "_blank");
 }
@@ -482,7 +428,9 @@ function openImage(link) {
     <div v-if="isOpen" class="chat-window">
       <div class="chat-header" style="height: 55px">
         <div style="display: flex; flex-direction: column">
-          <div style="font-size: 14px; font-weight: bold">Chat</div>
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px">
+            Chat với Đông
+          </div>
           <div style="display: flex; align-items: center; gap: 5px">
             <button class="btn-set-name" @click="setUserNameClient">Set</button>
             <input
@@ -622,7 +570,7 @@ function openImage(link) {
                   color: msg.SenderID === senderID ? 'white' : 'blue',
                 }"
               >
-                <div>{{ msg.MessageContent }}</div>
+                <div>{{ msg.MessageContent.substring(0, 20) + "..." }}</div>
               </div>
             </span>
 
@@ -729,6 +677,11 @@ function openImage(link) {
   color: white;
   font-size: 20px;
   cursor: pointer;
+  margin-bottom: 35px;
+}
+
+.close-button:hover {
+  transform: scale(1.5);
 }
 
 .chat-messages {
@@ -736,7 +689,7 @@ function openImage(link) {
   padding: 10px;
   overflow-y: auto;
   background-color: lightgray;
-  width: 320px;
+  width: 300px;
 }
 
 .chat-messages ul {
