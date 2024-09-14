@@ -109,15 +109,26 @@ async function sendMessage() {
 async function setUserNameClient(flagAlert = true) {
   if (!senderID.value) {
     senderID.value = generateGUIDAndSaveToLocalStorage();
-    await getOrCreateChatId(senderID.value, receiverID);
-  }
+    if (userNameClient.value) {
+      // Show dialog with the username
 
-  if (userNameClient.value) {
-    // Show dialog with the username
+      await getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
+      if (flagAlert) {
+        alert(`Đặt tên của bạn thành công!`);
+      }
+    } else {
+      if (flagAlert) alert(`Tên không được để trống!`);
+    }
+  } else {
+    if (userNameClient.value) {
+      // Show dialog with the username
 
-    await getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
-    if (flagAlert) {
-      alert(`Đặt tên của bạn thành công!`);
+      await getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
+      if (flagAlert) {
+        alert(`Đặt tên của bạn thành công!`);
+      } else {
+        if (flagAlert) alert(`Tên không được để trống!`);
+      }
     }
   }
 }
