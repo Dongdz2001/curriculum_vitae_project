@@ -11,6 +11,7 @@ import {
   query,
   orderBy,
   onSnapshot, // Thêm onSnapshot vào đây
+  Timestamp,
 } from "firebase/firestore";
 import {
   ref as storageRefFn,
@@ -252,7 +253,15 @@ async function getOrCreateChatId(user1, user2, user3 = null) {
   const chatRef = doc(db, "chats", chatId);
   await setDoc(
     chatRef,
-    { participants: [user1, user2, user3 ? user3 : user1, new Date(), false] },
+    {
+      participants: [
+        user1,
+        user2,
+        user3 ? user3 : user1,
+        false,
+        Timestamp.now(),
+      ],
+    },
     { merge: true }
   );
   return chatId;
@@ -438,11 +447,11 @@ function openImage(link) {
               type="text"
               placeholder="Nhập tên của bạn"
               style="
-                height: 25px; /*
-            Increased height for better touch target */
-                font-size: 14px; /*
+                height: 30px;
+                font-size: 14px;
+                /*
             Increased font size for better readability */
-                padding: 0 10px; /*
+                padding: 0px 10px; /*
             Added padding for better spacing */
                 border: 1px solid #ccc; /* Added
             border for better visibility */
@@ -744,7 +753,7 @@ function openImage(link) {
   background-color: #00bcd4;
   border-radius: 5px;
   border: none;
-  height: 25px;
+  height: 30px;
   padding: 0 10px;
   font-size: 12px;
   color: white;
