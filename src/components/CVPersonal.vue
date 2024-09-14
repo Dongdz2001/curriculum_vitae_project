@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import ChatBubble from "./ChatBubble.vue"; // Thêm dòng này
-import { db } from "../../src/firebase.js";
 
 const name = ref("Dương Minh Đông");
 const title = ref("Kỹ Sư Phần Mềm");
@@ -11,6 +10,9 @@ const location = ref("Hanoi, Vietnam");
 const summary = ref(
   "Passionate Software Engineer with expertise in web development and a strong foundation in computer science. Skilled in JavaScript, React, and Node.js, with a track record of delivering high-quality software solutions. Committed to continuous learning and staying updated with the latest industry trends."
 );
+
+const musicSource = ref("vietnamoi.mp3");
+const backgroundMusic = ref(null);
 
 const education = ref([
   {
@@ -88,6 +90,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <audio ref="backgroundMusic" :src="musicSource" autoplay loop></audio>
   <div class="cv-personal">
     <div class="cv-container">
       <a
@@ -96,9 +99,10 @@ onUnmounted(() => {
         rel="noopener noreferrer"
         class="print-button"
       >
-        <i class="fas fa-print"></i>
+        <i class="fas fa-print" style="font-size: 18px"></i>
+        Tải CV
       </a>
-      <header>
+      <div class="header-cv">
         <img
           :src="avatar"
           alt="Avatar"
@@ -106,7 +110,7 @@ onUnmounted(() => {
           @click="toggleAvatarDialog"
         />
         <h1>{{ name }}</h1>
-        <p>
+        <p style="padding-bottom: 30px">
           <strong
             class="position-label"
             style="font-weight: 600; opacity: 0.8; font-size: 0.9em"
@@ -114,7 +118,9 @@ onUnmounted(() => {
           </strong>
           <strong class="title">{{ title }}</strong>
         </p>
-      </header>
+      </div>
+
+      <header class="header-avatar"></header>
       <section class="contact-info" style="display: flex; flex-wrap: wrap">
         <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
           <i class="fas fa-envelope"></i> {{ email }}
@@ -232,6 +238,7 @@ h1 {
 .title {
   font-size: 18px;
   color: #666;
+  animation: avatarOpacity 1s infinite ease-in-out;
 }
 
 h2 {
@@ -279,23 +286,28 @@ ul {
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 20px;
+  margin-top: 50px;
   cursor: pointer;
 }
 
 .print-button {
   position: absolute;
+  display: flex;
+  flex-direction: column;
   top: 20px;
   right: 20px;
-  background-color: #f0f0f0;
   border: none;
-  border-radius: 50%;
-  width: 40px;
+  border-radius: 48%;
+  padding: 10px;
+  width: auto;
   height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   transition: background-color 0.3s;
+  font-size: 12px;
+  text-decoration: none;
 }
 
 .print-button:hover {
@@ -303,7 +315,6 @@ ul {
 }
 
 .print-button i {
-  font-size: 20px;
   color: #333;
 }
 
@@ -332,5 +343,65 @@ ul {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+.header-avatar {
+  height: 400px;
+  background-image: url("vn.jpg"); /* Đường dẫn đến ảnh nền */
+  background-size: cover;
+  animation: blinkOpacity 5s infinite ease-in-out; /* Hiệu ứng nhấp nháy 1s lặp vô hạn với easing */
+}
+/* Khi kích thước màn hình nhỏ hơn 1080px */
+@media (max-width: 1080px) {
+  .header-avatar {
+    height: 450px;
+  }
+}
+@media (max-width: 460px) {
+  .header-avatar {
+    height: 530px;
+  }
+}
+
+/* Định nghĩa animation cho hiệu ứng nhấp nháy */
+@keyframes blinkOpacity {
+  0% {
+    opacity: 1; /* Độ mờ cao nhất */
+    color: #e0e0e0;
+  }
+  50% {
+    opacity: 0.1; /* Độ mờ thấp nhất */
+    color: blacks;
+  }
+  100% {
+    opacity: 1; /* Quay lại độ mờ cao nhất */
+    color: #e0e0e0;
+  }
+}
+
+@keyframes avatarOpacity {
+  0% {
+    color: #e0e0e0;
+  }
+  50% {
+    color: black;
+  }
+  100% {
+    color: #e0e0e0;
+  }
+}
+
+.header-cv {
+  position: absolute; /* Định vị tuyệt đối bên trong .header-avatar */
+  top: 15%; /* Căn giữa theo chiều dọc */
+  left: 50%; /* Căn giữa theo chiều ngang */
+  transform: translate(
+    -50%,
+    -50%
+  ); /* Căn giữa tuyệt đối bằng cách dịch chuyển 50% */
+  z-index: 1; /* Đảm bảo .header-cv nằm trên header-avatar */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  animation: avatarOpacity 3s infinite ease-in-out;
 }
 </style>
