@@ -120,7 +120,11 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <header class="header-avatar"></header>
+      <header
+        class="header-avatar"
+        :style="{ backgroundImage: 'url(\'@/assets/vnn.png\')' }"
+      ></header>
+
       <section class="contact-info" style="display: flex; flex-wrap: wrap">
         <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
           <i class="fas fa-envelope"></i> {{ email }}
@@ -346,7 +350,6 @@ ul {
 }
 .header-avatar {
   height: 400px;
-  background-image: url("vn.jpg"); /* Đường dẫn đến ảnh nền */
   background-size: cover;
   animation: blinkOpacity 5s infinite ease-in-out; /* Hiệu ứng nhấp nháy 1s lặp vô hạn với easing */
 }
