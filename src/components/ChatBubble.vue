@@ -126,9 +126,9 @@ async function setUserNameClient(flagAlert = true) {
       await getOrCreateChatId(senderID.value, receiverID, userNameClient.value);
       if (flagAlert) {
         alert(`Đặt tên của bạn thành công!`);
-      } else {
-        if (flagAlert) alert(`Tên không được để trống!`);
       }
+    } else {
+      if (flagAlert) alert(`Tên không được để trống!`);
     }
   }
 }
@@ -452,7 +452,9 @@ function openImage(link) {
             Chat với Đông
           </div>
           <div style="display: flex; align-items: center; gap: 5px">
-            <button class="btn-set-name" @click="setUserNameClient">Set</button>
+            <button class="btn-set-name" @click="setUserNameClient(true)">
+              Set
+            </button>
             <input
               v-model="userNameClient"
               type="text"
