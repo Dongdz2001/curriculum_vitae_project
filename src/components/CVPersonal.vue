@@ -82,17 +82,26 @@ const handleResize = () => {
 
 onMounted(() => {
   window.addEventListener("resize", handleResize);
+  backgroundMusic.value.play();
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
 });
+
+function playMusic() {
+  backgroundMusic.value.play();
+}
 </script>
 
-<template>
-  <audio ref="backgroundMusic" :src="musicSource" autoplay loop></audio>
-  <div class="cv-personal">
-    <div class="cv-container">
+<template >
+  <audio class="song" loop autoplay ref="backgroundMusic">
+        <source :src="musicSource">
+        </source>
+        Your browser isn't invited for super fun audio time.
+    </audio>
+  <div class="cv-personal" @click="playMusic" @scroll="playMusic">
+    <div class="cv-container" @scroll="playMusic">
       <a
         :href="pdfPath"
         target="_blank"
@@ -122,7 +131,7 @@ onUnmounted(() => {
 
       <header
         class="header-avatar"
-        :style="{ backgroundImage: 'url(\'@/assets/vnn.png\')' }"
+        :style="{ backgroundImage: 'url(\'vnn.png\')' }"
       ></header>
 
       <section class="contact-info" style="display: flex; flex-wrap: wrap">
@@ -225,7 +234,7 @@ onUnmounted(() => {
 .cv-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px;
+  padding: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 

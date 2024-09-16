@@ -4,5 +4,5 @@ import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  base: '/curriculum_vitae_project/', // Thay thế với tên repo của bạn
+  base: '/', // Thay thế với tên repo của bạn
 })
