@@ -14,6 +14,13 @@ const summary = ref(
 const musicSource = ref("vietnamoi.mp3");
 const backgroundMusic = ref(null);
 
+const isMuted = ref(false);
+const toggleMute = () => {
+  isMuted.value = !isMuted.value;
+  backgroundMusic.value.muted = isMuted.value; // Tắt hoặc bật tiếng dựa vào isMuted
+};
+
+
 const education = ref([
   {
     degree: "Bachelor of Science in Computer Science",
@@ -94,45 +101,37 @@ function playMusic() {
 }
 </script>
 
-<template >
+<template>
   <audio class="song" loop autoplay ref="backgroundMusic">
-        <source :src="musicSource">
-        </source>
-        Your browser isn't invited for super fun audio time.
-    </audio>
+    <source :src="musicSource">
+    </source>
+    Your browser isn't invited for super fun audio time.
+  </audio>
   <div class="cv-personal" @click="playMusic" @scroll="playMusic">
+   
     <div class="cv-container" @scroll="playMusic">
-      <a
-        :href="pdfPath"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="print-button"
-      >
+      <div class="tool-group">
+      <i :class="isMuted ? 'fa-solid fa-volume-mute' : 'fa-solid fa-volume-low'"  @click="toggleMute" class="speaker-class"></i>
+      <a :href="pdfPath" target="_blank" rel="noopener noreferrer" class="print-button">
         <i class="fas fa-print" style="font-size: 18px"></i>
         Tải CV
       </a>
+    </div>
+
+     
+
+
       <div class="header-cv">
-        <img
-          :src="avatar"
-          alt="Avatar"
-          class="avatar"
-          @click="toggleAvatarDialog"
-        />
+        <img :src="avatar" alt="Avatar" class="avatar" @click="toggleAvatarDialog" />
         <h1>{{ name }}</h1>
         <p style="padding-bottom: 30px">
-          <strong
-            class="position-label"
-            style="font-weight: 600; opacity: 0.8; font-size: 0.9em"
-            >Vị trí ứng tuyển:
+          <strong class="position-label" style="font-weight: 600; opacity: 0.8; font-size: 0.9em">Vị trí ứng tuyển:
           </strong>
           <strong class="title">{{ title }}</strong>
         </p>
       </div>
 
-      <header
-        class="header-avatar"
-        :style="{ backgroundImage: 'url(\'vnn.png\')' }"
-      ></header>
+      <header class="header-avatar" :style="{ backgroundImage: 'url(\'vnn.png\')' }"></header>
 
       <section class="contact-info" style="display: flex; flex-wrap: wrap">
         <div class="contact-item" style="flex: 1 1 auto; min-width: 200px">
@@ -162,10 +161,7 @@ function playMusic() {
           <h3>{{ job.position }}</h3>
           <p>{{ job.company }}, {{ job.period }}</p>
           <ul>
-            <li
-              v-for="(responsibility, idx) in job.responsibilities"
-              :key="idx"
-            >
+            <li v-for="(responsibility, idx) in job.responsibilities" :key="idx">
               {{ responsibility }}
             </li>
           </ul>
@@ -178,33 +174,18 @@ function playMusic() {
         </ul>
       </section>
     </div>
-    <ChatBubble
-      :is-open="isChatOpen"
-      @toggle="toggleChat"
-      style="margin-bottom: 50px"
-    />
+    <ChatBubble :is-open="isChatOpen" @toggle="toggleChat" style="margin-bottom: 50px" />
 
     <!-- Avatar Dialog -->
-    <div
-      v-if="showAvatarDialog"
-      class="avatar-dialog"
-      @click="toggleAvatarDialog"
-    >
+    <div v-if="showAvatarDialog" class="avatar-dialog" @click="toggleAvatarDialog">
       <div class="avatar-dialog-content" @click.stop>
         <div style="position: relative">
-          <img
-            :src="avatar"
-            alt="Avatar"
-            class="avatar-fullscreen"
-            :style="{
-              width: '100%',
-              height: windowWidth > 1200 ? '500px' : 'auto',
-              maxHeight: '500px',
-            }"
-          />
-          <span
-            @click="toggleAvatarDialog"
-            style="
+          <img :src="avatar" alt="Avatar" class="avatar-fullscreen" :style="{
+            width: '100%',
+            height: windowWidth > 1200 ? '500px' : 'auto',
+            maxHeight: '500px',
+          }" />
+          <span @click="toggleAvatarDialog" style="
               position: absolute;
               top: -20px;
               right: -10px;
@@ -213,9 +194,7 @@ function playMusic() {
               cursor: pointer;
               text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
                 1px 1px 0 #000;
-            "
-            >X</span
-          >
+            ">X</span>
         </div>
       </div>
     </div>
@@ -228,7 +207,8 @@ function playMusic() {
   background-color: white;
   color: #333;
   line-height: 1.6;
-  position: relative; /* Thêm dòng này */
+  position: relative;
+  /* Thêm dòng này */
 }
 
 .cv-container {
@@ -303,8 +283,19 @@ ul {
   cursor: pointer;
 }
 
-.print-button {
+.tool-group {
   position: absolute;
+  display: flex;
+  flex-direction: row;
+  top: 20px;
+  right: 20px;
+  border: none;
+  width: auto;
+  height: 20px;
+  align-items: center;
+}
+
+.print-button {
   display: flex;
   flex-direction: column;
   top: 20px;
@@ -312,7 +303,7 @@ ul {
   border: none;
   border-radius: 48%;
   padding: 10px;
-  width: auto;
+  width: 40px;
   height: 40px;
   display: flex;
   justify-content: center;
@@ -321,10 +312,21 @@ ul {
   transition: background-color 0.3s;
   font-size: 12px;
   text-decoration: none;
+  margin-left: 5px;
 }
 
 .print-button:hover {
   background-color: #e0e0e0;
+}
+
+.speaker-class:hover {
+  background-color: #e0e0e0;
+}
+
+.speaker-class {
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 48%;
 }
 
 .print-button i {
@@ -357,17 +359,21 @@ ul {
   max-height: 100%;
   object-fit: contain;
 }
+
 .header-avatar {
   height: 400px;
   background-size: cover;
-  animation: blinkOpacity 5s infinite ease-in-out; /* Hiệu ứng nhấp nháy 1s lặp vô hạn với easing */
+  animation: blinkOpacity 5s infinite ease-in-out;
+  /* Hiệu ứng nhấp nháy 1s lặp vô hạn với easing */
 }
+
 /* Khi kích thước màn hình nhỏ hơn 1080px */
 @media (max-width: 1080px) {
   .header-avatar {
     height: 450px;
   }
 }
+
 @media (max-width: 460px) {
   .header-avatar {
     height: 530px;
@@ -377,15 +383,20 @@ ul {
 /* Định nghĩa animation cho hiệu ứng nhấp nháy */
 @keyframes blinkOpacity {
   0% {
-    opacity: 1; /* Độ mờ cao nhất */
+    opacity: 1;
+    /* Độ mờ cao nhất */
     color: #e0e0e0;
   }
+
   50% {
-    opacity: 0.1; /* Độ mờ thấp nhất */
+    opacity: 0.1;
+    /* Độ mờ thấp nhất */
     color: blacks;
   }
+
   100% {
-    opacity: 1; /* Quay lại độ mờ cao nhất */
+    opacity: 1;
+    /* Quay lại độ mờ cao nhất */
     color: #e0e0e0;
   }
 }
@@ -394,23 +405,28 @@ ul {
   0% {
     color: #e0e0e0;
   }
+
   50% {
     color: black;
   }
+
   100% {
     color: #e0e0e0;
   }
 }
 
 .header-cv {
-  position: absolute; /* Định vị tuyệt đối bên trong .header-avatar */
-  top: 15%; /* Căn giữa theo chiều dọc */
-  left: 50%; /* Căn giữa theo chiều ngang */
-  transform: translate(
-    -50%,
-    -50%
-  ); /* Căn giữa tuyệt đối bằng cách dịch chuyển 50% */
-  z-index: 1; /* Đảm bảo .header-cv nằm trên header-avatar */
+  position: absolute;
+  /* Định vị tuyệt đối bên trong .header-avatar */
+  top: 15%;
+  /* Căn giữa theo chiều dọc */
+  left: 50%;
+  /* Căn giữa theo chiều ngang */
+  transform: translate(-50%,
+      -50%);
+  /* Căn giữa tuyệt đối bằng cách dịch chuyển 50% */
+  z-index: 1;
+  /* Đảm bảo .header-cv nằm trên header-avatar */
   justify-content: center;
   align-items: center;
   text-align: center;
